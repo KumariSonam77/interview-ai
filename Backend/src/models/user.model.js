@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
         unique:[true,"Account already exists with this email address"],
         required:true,
     },
-    pasword:{
+    password:{
         type:String,
         required:true
     }
