@@ -18,10 +18,10 @@ const technicalQuestionSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Question is required']
     },
-    intension: {
-        type: String,
-        required: [true, 'Intension is required']
-    },
+    intention: {
+    type: String,
+    required: [true, 'Intention is required']
+},
     answer: {
         type: String,
         required: [true, 'Answer is required']
@@ -35,10 +35,10 @@ const behavioralQuestionSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Question is required']
     },
-    intension: {
-        type: String,
-        required: [true, 'Intension is required']
-    },
+    intention: {
+    type: String,
+    required: [true, 'Intention is required']
+},
     answer: {
         type: String,
         required: [true, 'Answer is required']
@@ -66,10 +66,10 @@ const preparationPlanSchema = new mongoose.Schema({
         type: Number,
         required: [true, 'Day is required']
     },
-    focus: {
-        type: String,
-        required: [true, 'Focus is required']
-    },
+    focusArea: {
+    type: String,
+    required: [true, 'Focus area is required']
+},
     tasks: [{
         type: String,
         required: [true, 'Task is required']
@@ -95,7 +95,11 @@ const interviewReportSchema = new mongoose.Schema({
     technicalQuestions: [technicalQuestionSchema],
     behavioralQuestions: [behavioralQuestionSchema],
     skillGaps: [skillGapSchema],
-    preparationPlan: [preparationPlanSchema]
+    preparationPlan: [preparationPlanSchema],
+    user:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }
 }, {
     timestamps: true
 })
