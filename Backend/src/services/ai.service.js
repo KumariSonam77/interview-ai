@@ -8,13 +8,13 @@ const ai = new GoogleGenAI({ apiKey: API_KEY });
 // Free-tier friendly models. Pehla model try hoga, fail hone par agla.
 // .env mein GEMINI_MODEL set karke primary model badal sakte ho.
 const MODELS = [
-    process.env.GEMINI_MODEL || "gemini-3.8-flash",
-    "gemini-3.5-flash-lite",
-    "gemini-3.7-flash",
+    process.env.GEMINI_MODEL || "gemini-3.8-flash-lite",
+    "gemini-3.5-flash",
+    
 ];
 
 const MAX_RETRIES_PER_MODEL = 4;
-const RETRYABLE_STATUS = [429, 500, 502, 503, 504];
+const RETRYABLE_STATUS = [ 500, 502, 503, 504];
 const MAX_INPUT_CHARS = 15000; // resume / JD bahut lamba ho to cut kar do
 
 // ---------- Schema ----------
@@ -51,6 +51,9 @@ const interviewReportSchema = z.object({
             tasks: z.array(z.string()),
         })
     ),
+    
+
+    title: z.string().default("Interview Report").describe("Title of the report"),
 });
 
 // ---------- Helpers ----------
@@ -151,6 +154,7 @@ Return ONLY valid JSON (no markdown, no extra text) with these exact fields:
 3. behavioralQuestions: Array of objects with question, intention and answer.
 4. skillGaps: Array of objects with skill and severity.
 5. preparationPlan: Array of objects with day (number), focusArea and tasks (array of strings).
+6. title: A short string title for the report (for example, the job role name).
 
 Severity must be exactly one of: low, medium, high.
 
