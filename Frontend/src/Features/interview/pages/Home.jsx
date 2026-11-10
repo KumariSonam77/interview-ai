@@ -1,7 +1,24 @@
-import React from "react";
+import React,{useState, useRef} from "react";
 import "../style/home.scss";
+import { useInterview } from "../hooks/useinterview";
+import { useNavigate } from "react-router";
 
 const Home = () => {
+
+  const {loading,generateReport} = useInterview()
+  const [jobDescription, setJobDescription] = useState("")
+  const resumeInputRef = useRef()
+  const navigate = useNavigate()
+
+  const handleGenerateReport = async () => {
+    const resumeFile = resumeInputRef.current.files[0]
+    const data=await generateReport({jobDescription, resumeFile})
+    navigate(`/interview/${data.id}`)
+  }
+  if(loading){
+    return <div>Loading...</div>
+  }
+
   return (
     <main className="home">
       <header className="home-header">
@@ -66,6 +83,8 @@ const Home = () => {
                 name="jobDescription"
                 id="jobDescription"
                 placeholder="Paste the job description here..."
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
               />
               <div className="field-footer">
                 <span>Be as specific as possible</span>
@@ -85,7 +104,7 @@ const Home = () => {
                   </span>
                   <span className="browse-text">Browse</span>
                 </label>
-                <input hidden type="file" name="resume" id="resume" accept=".pdf" />
+                <input  ref={resumeInputRef} hidden type="file" name="resume" id="resume" accept=".pdf" />
               </div>
 
               <div className="options-row">
@@ -111,7 +130,8 @@ const Home = () => {
 
           <div className="card-actions">
             <p><span className="lock-icon" aria-hidden="true">⌁</span> Your information stays private and secure.</p>
-            <button className="button primary-button" type="button">
+          
+            <button onClick={handleGenerateReport} className="button primary-button" type="button">
               Generate interview <span aria-hidden="true">→</span>
             </button>
           </div>

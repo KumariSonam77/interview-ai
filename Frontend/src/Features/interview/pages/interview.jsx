@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router";
 import "../style/interview.scss";
+import { useInterview } from "../hooks/useinterview";
 
 const interviewData = {
   matchScore: 85,
@@ -88,6 +89,7 @@ const Interview = () => {
   const data = location.state?.interview ?? interviewData;
   const [activeSection, setActiveSection] = useState("technical");
   const [activeQuestion, setActiveQuestion] = useState(0);
+  const {report} = useInterview();
 
   const questions =
     activeSection === "technical"
