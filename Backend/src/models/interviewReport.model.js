@@ -25,6 +25,11 @@ const technicalQuestionSchema = new mongoose.Schema({
     answer: {
         type: String,
         required: [true, 'Answer is required']
+    },
+    difficulty: {
+        type: String,
+        enum: ['easy', 'medium', 'hard'],
+        default: 'medium'
     }
 },{
     _id: false
@@ -42,6 +47,11 @@ const behavioralQuestionSchema = new mongoose.Schema({
     answer: {
         type: String,
         required: [true, 'Answer is required']
+    },
+    difficulty: {
+        type: String,
+        enum: ['easy', 'medium', 'hard'],
+        default: 'medium'
     }
 },{
     _id: false
@@ -60,6 +70,40 @@ const skillGapSchema = new mongoose.Schema({
 },{
     _id: false
 })
+
+const projectQuestionSchema = new mongoose.Schema({
+    question: { type: String, required: true },
+    intention: { type: String, required: true },
+    answer: { type: String, required: true },
+    difficulty: {
+        type: String,
+        enum: ['easy', 'medium', 'hard'],
+        default: 'medium'
+    }
+}, { _id: false })
+
+const skillEvidenceSchema = new mongoose.Schema({
+    skill: { type: String, required: true },
+    evidence: { type: String, required: true }
+}, { _id: false })
+
+const answerEvaluationSchema = new mongoose.Schema({
+    question: { type: String, required: true },
+    answer: { type: String, required: true },
+    score: { type: Number, min: 0, max: 10, required: true },
+    dimensions: {
+        technicalAccuracy: { type: Number, min: 0, max: 10, required: true },
+        relevance: { type: Number, min: 0, max: 10, required: true },
+        clarity: { type: Number, min: 0, max: 10, required: true },
+        completeness: { type: Number, min: 0, max: 10, required: true },
+        communication: { type: Number, min: 0, max: 10, required: true }
+    },
+    strengths: { type: [String], required: true },
+    weaknesses: { type: [String], required: true },
+    suggestions: { type: [String], required: true },
+    improvedAnswer: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now }
+}, { _id: true })
 
 const preparationPlanSchema = new mongoose.Schema({
     day: {
@@ -92,8 +136,15 @@ const interviewReportSchema = new mongoose.Schema({
         min:0,
         max:100,
     },
+    matchExplanation: String,
+    matchedSkills: [skillEvidenceSchema],
+    partialSkills: [skillEvidenceSchema],
+    resumeStrengths: [String],
+    improvementSuggestions: [String],
     technicalQuestions: [technicalQuestionSchema],
     behavioralQuestions: [behavioralQuestionSchema],
+    projectQuestions: [projectQuestionSchema],
+    answerEvaluations: [answerEvaluationSchema],
     skillGaps: [skillGapSchema],
     preparationPlan: [preparationPlanSchema],
     user:{

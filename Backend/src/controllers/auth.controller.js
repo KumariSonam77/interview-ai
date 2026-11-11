@@ -3,18 +3,34 @@ const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const tokenBlacklistModel = require("../models/blacklist.model")
 
+function validateJwtConfiguration() {
+    if (!process.env.JWT_SECRET) {
+        const error = new Error("JWT_SECRET is missing in .env");
+        error.status = 500;
+        throw error;
+    }
+}
+
 /**
  * @route POST/api/auth/register
  * @description Register a new user,expects username,email and password in the request body
  * @access Public
  */
 async function registerUserController(req, res) {
-    const { username ,email, password }=req.body
-    if (!username|| !email|| !password){
+    const username = req.body.username?.trim();
+    const email = req.body.email?.trim().toLowerCase();
+    const { password } = req.body;
+    if (!username || !email || !password){
         return res.status(400).json({
             message:"please provide username,email and password"
         })
     }
+    if (password.length < 8) {
+        return res.status(400).json({
+            message: "Password must be at least 8 characters"
+        });
+    }
+    validateJwtConfiguration();
     const isUserAlreadyExists = await userModel.findOne({
         $or:[{username},{email}]
     })
@@ -50,7 +66,13 @@ async function registerUserController(req, res) {
  * @access public
  */
 async function loginUserController(req,res){
-    const {email, password} = req.body
+    const email = req.body.email?.trim().toLowerCase();
+    const { password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({
+            message: "Please provide email and password"
+        });
+    }
     const user = await userModel.findOne({email})
     if (!user) {
         return res.status(400).json({
@@ -63,6 +85,7 @@ async function loginUserController(req,res){
             message:"Invalid email or password"
         })
     }
+    validateJwtConfiguration();
      const token = jwt.sign(
         {id: user._id,username: user.username},
         process.env.JWT_SECRET,
@@ -108,6 +131,11 @@ async function logoutUserController(req, res){
  */
 async function getMeController(req,res){
     const user = await userModel.findById(req.user.id)
+    if (!user) {
+        return res.status(404).json({
+            message: "User account not found"
+        });
+    }
     res.status(200).json({
         message:"User details fetched successfully",
         user:{

@@ -19,6 +19,10 @@ interviewRouter.post("/", authMiddleware.authUser,upload.single("resume"),interv
  */
 interviewRouter.get("/report/:interviewId", authMiddleware.authUser, interviewController.getInterviewReportByIdController);
 
+interviewRouter.post("/report/:interviewId/evaluate", authMiddleware.authUser, interviewController.evaluateInterviewAnswerController);
+interviewRouter.delete("/report/:interviewId", authMiddleware.authUser, interviewController.deleteInterviewReportController);
+interviewRouter.get("/report/:interviewId/download", authMiddleware.authUser, interviewController.downloadInterviewReportController);
+
 /**
  * @route GET /api/interview/
  * @description get all interview reports of logged in user
