@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: "http://localhost:3000",
+    baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
     withCredentials: true,
 });
 
@@ -32,7 +32,22 @@ export const getInterviewReportById =async (interviewId) => {
 /**
  * @description service to get all interview reports of the logged-in user
  */
-export const getAllInterviewReports = async () => {
-    const response = await api.get("/api/interview/");
+export const getAllInterviewReports = async (params = {}) => {
+    const response = await api.get("/api/interview/", { params });
+    return response.data;
+}
+
+export const deleteInterviewReport = async (interviewId) => {
+    const response = await api.delete(`/api/interview/report/${interviewId}`);
+    return response.data;
+}
+
+export const downloadInterviewReport = async (interviewId) => {
+    const response = await api.get(`/api/interview/report/${interviewId}/download`, { responseType: "blob" });
+    return response.data;
+}
+
+export const evaluateInterviewAnswer = async (interviewId, { question, answer }) => {
+    const response = await api.post(`/api/interview/report/${interviewId}/evaluate`, { question, answer });
     return response.data;
 }

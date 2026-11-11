@@ -3,9 +3,9 @@ import {useNavigate,Link} from "react-router"
 import"../auth.form.scss"
 import { useAuth } from '../hooks/useAuth'
 
-const login = () => {
+const Login = () => {
 
-  const {loading, handleLogin}=useAuth()
+  const {loading, error, handleLogin}=useAuth()
   const navigate = useNavigate()
 
   const [email, setemail] = useState("")
@@ -13,36 +13,39 @@ const login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    await handleLogin({email,password})
-    navigate('/home')
+    const success = await handleLogin({email,password})
+    if (success) navigate('/home')
   }
   if(loading){
     return(
-      <main>
-        <h1>loading</h1>
+      <main className="auth-page">
+        <div className="loading-state"><span className="loading-spinner" />Preparing your workspace...</div>
       </main>
     )
   }
 
   return (
-    <main>
+    <main className="auth-page">
       <div className="form-container">
-        <h1>Login</h1>
+        <div className="auth-kicker">AI INTERVIEW COACH</div>
+        <h1>Welcome back<span className="highlight">.</span></h1>
+        <p className="form-subtitle">Sign in to continue building interview confidence.</p>
         <form onSubmit={handleSubmit}>
 
           <div className="input-group">
             <label htmlFor="email">Email</label>
-            <input 
+            <input required
             onChange={(e)=>{setemail(e.target.value)}}
             type="email" id="email" name="email" placeholder='Enter email address'/>
           </div>
           <div className="input-group">
             <label htmlFor="password">password</label>
-            <input
+            <input required
             onChange={(e)=>{setpassword(e.target.value)}}
              type="password" id="password" name="password" placeholder='Enter password'/>
           </div>
-          <button className='button primary-button'>login</button>
+          {error && <p className="form-error" role="alert">{error}</p>}
+          <button className='button primary-button' disabled={loading}>Sign in</button>
         </form>
 
         <p> Don't have an account? <Link to={"/register"}>Register</Link></p>
@@ -51,4 +54,4 @@ const login = () => {
   )
 }
 
-export default login
+export default Login

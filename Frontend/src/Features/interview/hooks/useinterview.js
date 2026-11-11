@@ -1,5 +1,5 @@
 import { getAllInterviewReports, generateInterviewReport, getInterviewReportById } from "../services/interview.api";
-import {useContext} from "react";
+import {useCallback, useContext} from "react";
 import {InterviewContext} from "../interview.context"
 
 
@@ -8,51 +8,57 @@ export const useInterview = () => {
     if(!context){
         throw new Error("useInterview must be used within an InterviewProvider")
     }
-    const {loading,setLoading,report,setReport,reports,setReports} = context
+    const {loading,setLoading,report,setReport,reports,setReports,error,setError} = context
 
     const generateReport = async ({jobDescription, resumeFile}) => {
         setLoading(true)
+        setError("")
         let response = null;
         try {
-            const response = await generateInterviewReport({jobDescription, resume: resumeFile})
-            if (data){
+            response = await generateInterviewReport({jobDescription, resume: resumeFile})
+                if (response?.interviewReport){
             setReport(response.interviewReport)
             }
         } catch (error) {
             console.error("Error generating interview report:", error)
+            setError(error.response?.data?.message || "Unable to generate your report. Please try again.")
         } finally {
             setLoading(false)
         }
-        return response.interviewReport
+        return response?.interviewReport || null
 }
 
-    const getReportById = async (interviewId) => {
+    const getReportById = useCallback(async (interviewId) => {
         setLoading(true)
+        setError("")
         let response = null;
         try {
-            const response = await getInterviewReportById(interviewId)
+            response = await getInterviewReportById(interviewId)
             setReport(response.interviewReport)
         } catch (error) {
             console.error("Error fetching interview report by ID:", error)
+            setError(error.response?.data?.message || "Unable to load this report.")
         } finally {
             setLoading(false)
         }
-        return response.interviewReport
-    }
+        return response?.interviewReport || null
+    }, [setError, setLoading, setReport])
 
-    const getAllReports = async () => {
+    const getAllReports = useCallback(async (params = {}) => {
         setLoading(true)
+        setError("")
         let response = null;
         try {
-            const response = await getAllInterviewReports()
+            response = await getAllInterviewReports(params)
             setReports(response.interviewReports)
         } catch (error) {
             console.error("Error fetching all interview reports:", error)
+            setError(error.response?.data?.message || "Unable to load your report history.")
         } finally {
             setLoading(false)
         }
-        return response.interviewReports
-    }
+        return response?.interviewReports || []
+    }, [setError, setLoading, setReports])
 
-    return {loading,report,reports,generateReport,getReportById,getAllReports}
+    return {loading,report,reports,error,generateReport,getReportById,getAllReports}
 }

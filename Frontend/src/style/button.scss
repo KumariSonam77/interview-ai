@@ -3,16 +3,16 @@
     outline: none;
     padding-inline: 1.5rem;
     padding-block: 0.75rem;
-    border-radius: 1rem;
+    border-radius: 0.55rem;
     
-    transition: all 0.3s ease-in-out;
+    transition: background-color 0.2s ease, transform 0.2s ease;
 
     &,primary-button{
-        background-color: #e1034d;
-        color: white;
+        background-color: #f26a9f;
+        color: #17101a;
     }
 
     &:active{
-        transform: scale(1.1);
+        transform: translateY(1px);
     }
 }

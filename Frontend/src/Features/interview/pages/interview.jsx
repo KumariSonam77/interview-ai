@@ -1,233 +1,203 @@
-import React, { useState } from "react";
-import { useLocation } from "react-router";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
 import "../style/interview.scss";
 import { useInterview } from "../hooks/useinterview";
-
-const interviewData = {
-  matchScore: 85,
-  technicalQuestions: [
-    {
-      question: "Can you explain how you integrated React.js and Next.js in your Healthcare Appointment Booking System (HABS)?",
-      intention: "To assess the candidate's practical experience with modern frontend frameworks.",
-      answer: "In HABS, I used React.js and Next.js to build dynamic UI components and handle responsive layouts. Next.js helped with routing and performance optimizations, while React managed the interactive state for booking appointments.",
-    },
-    {
-      question: "How do you connect a Node.js and Express.js backend to a MongoDB database?",
-      intention: "To verify core backend knowledge of the MERN stack.",
-      answer: "We connect by using Mongoose or the native MongoDB driver in Node.js. We initialize a connection string pointing to the MongoDB cluster using Express, and handle asynchronous connection promises to ensure the server is successfully connected.",
-    },
-    {
-      question: "What is the role of RESTful APIs in web applications, and how have you implemented them?",
-      intention: "To test understanding of API design and integration.",
-      answer: "RESTful APIs act as a bridge between the frontend and backend using standard HTTP methods like GET, POST, PUT, and DELETE. I have implemented API endpoints using Express.js and consumed them on the frontend using JavaScript and React.",
-    },
-  ],
-  behavioralQuestions: [
-    {
-      question: "Can you describe a challenging bug you faced during your projects and how you resolved it?",
-      intention: "To evaluate problem-solving and debugging skills.",
-      answer: "During the development of Trinetra, I faced memory optimization issues with Python scripts. I analyzed the data processing loops, removed redundant variables, and optimized data structures to ensure clean and efficient execution.",
-    },
-    {
-      question: "How do you manage your time while balancing your B.Tech CSE studies and building full-stack projects?",
-      intention: "To assess time management and dedication to learning software development.",
-      answer: "I set clear daily and weekly goals, prioritizing my coursework alongside hands-on coding. Applying what I learn in class directly to projects like HABS helps me reinforce concepts efficiently.",
-    },
-  ],
-  skillGaps: [
-    { skill: "JWT Authentication", severity: "medium" },
-    { skill: "Advanced Production-Level Express.js Architecture", severity: "low" },
-  ],
-  preparationPlan: [
-    {
-      day: 1,
-      focusArea: "MERN Stack Core & Architecture",
-      tasks: [
-        "Review Express.js routing and middleware concepts.",
-        "Practice setting up a basic Node, Express, and MongoDB boilerplate.",
-        "Understand the request-response lifecycle in REST APIs.",
-      ],
-    },
-    {
-      day: 2,
-      focusArea: "Authentication & Security",
-      tasks: [
-        "Learn how JWT (JSON Web Tokens) work for user authentication.",
-        "Implement user registration and login endpoints with password hashing (bcrypt).",
-        "Protect backend routes using authentication middleware.",
-      ],
-    },
-    {
-      day: 3,
-      focusArea: "React.js State Management & API Integration",
-      tasks: [
-        "Review React hooks (useState, useEffect) for data fetching.",
-        "Practice connecting a React frontend to a local Express backend.",
-        "Review state management best practices for forms and UI responsiveness.",
-      ],
-    },
-    {
-      day: 4,
-      focusArea: "Debugging & Git Workflow",
-      tasks: [
-        "Practice common debugging techniques in Node and React.",
-        "Review Git commands for branching, committing, and resolving merge conflicts.",
-        "Prepare walkthroughs for the HABS and Trinetra projects.",
-      ],
-    },
-  ],
-};
+import { evaluateInterviewAnswer } from "../services/interview.api";
+import { deleteInterviewReport, downloadInterviewReport } from "../services/interview.api";
 
 const sections = [
+  { id: "overview", label: "Report overview" },
   { id: "technical", label: "Technical questions" },
-  { id: "behavioral", label: "Behavioral questions" },
-  { id: "roadmap", label: "Road Map" },
+  { id: "behavioral", label: "HR & behavioral" },
+  { id: "projects", label: "Project questions" },
+  { id: "roadmap", label: "Preparation roadmap" },
 ];
 
-const Interview = () => {
-  const location = useLocation();
-  const data = location.state?.interview ?? interviewData;
-  const [activeSection, setActiveSection] = useState("technical");
-  const [activeQuestion, setActiveQuestion] = useState(0);
-  const {report} = useInterview();
+const QuestionList = ({ title, questions, activeQuestion, setActiveQuestion }) => {
+  const question = questions[activeQuestion];
+  if (!questions.length) return <div className="state-card">No questions were returned for this section.</div>;
 
-  const questions =
-    activeSection === "technical"
-      ? data.technicalQuestions
-      : data.behavioralQuestions;
-
-  const renderQuestions = () => (
+  return (
     <div className="question-view">
       <div className="question-header">
-        <div>
-          <p className="eyebrow">Practice session</p>
-          <h1>{activeSection === "technical" ? "Technical questions" : "Behavioral questions"}</h1>
-        </div>
+        <div><p className="eyebrow">Practice session</p><h1>{title}</h1></div>
         <span className="question-count">{questions.length} questions</span>
       </div>
-
-      <div className="question-list" role="tablist" aria-label="Interview questions">
+      <div className="question-list" role="tablist">
         {questions.map((item, index) => (
-          <button
-            className={`question-tab ${index === activeQuestion ? "active" : ""}`}
-            key={item.question}
-            onClick={() => setActiveQuestion(index)}
-            role="tab"
-            type="button"
-            aria-selected={index === activeQuestion}
-          >
+          <button className={`question-tab ${index === activeQuestion ? "active" : ""}`} key={item.question} onClick={() => setActiveQuestion(index)} type="button">
             <span>{String(index + 1).padStart(2, "0")}</span>
             <strong>{item.question}</strong>
+            <em className={`difficulty ${item.difficulty || "medium"}`}>{item.difficulty || "medium"}</em>
           </button>
         ))}
       </div>
-
       <article className="answer-card">
-        <div className="answer-card-topline">
-          <span>Question {activeQuestion + 1}</span>
-          <span className="score-pill">Suggested answer</span>
-        </div>
-        <h2>{questions[activeQuestion].question}</h2>
-        <div className="answer-section">
-          <p className="section-label">Why this is asked</p>
-          <p>{questions[activeQuestion].intention}</p>
-        </div>
-        <div className="answer-section answer-copy">
-          <p className="section-label">Answer guide</p>
-          <p>{questions[activeQuestion].answer}</p>
-        </div>
+        <div className="answer-card-topline"><span>Question {activeQuestion + 1}</span><span className={`difficulty ${question.difficulty || "medium"}`}>{question.difficulty || "medium"}</span></div>
+        <h2>{question.question}</h2>
+        <div className="answer-section"><p className="section-label">Why this is asked</p><p>{question.intention}</p></div>
+        <div className="answer-section answer-copy"><p className="section-label">Suggested answer</p><p>{question.answer}</p></div>
       </article>
+    </div>
+  );
+};
+
+const EvidenceList = ({ title, items, tone }) => (
+  <div className={`evidence-panel ${tone || ""}`}>
+    <h3>{title}</h3>
+    {items?.length ? <ul>{items.map((item) => <li key={item.skill}><strong>{item.skill}</strong><span>{item.evidence}</span></li>)}</ul> : <p className="muted">No items identified in the generated report.</p>}
+  </div>
+);
+
+const AnswerEvaluator = ({ interviewId, question, evaluations, onEvaluated }) => {
+  const [answer, setAnswer] = useState("");
+  const [evaluation, setEvaluation] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const attempts = evaluations.filter((item) => item.question === question.question);
+
+  const submitAnswer = async (event) => {
+    event.preventDefault();
+    if (answer.trim().length < 20) {
+      setError("Write at least 20 characters so the coach can evaluate your answer.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const data = await evaluateInterviewAnswer(interviewId, { question: question.question, answer });
+      setEvaluation(data.evaluation);
+      setAnswer("");
+      onEvaluated(data.evaluation);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to evaluate this answer. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="evaluator-card" aria-labelledby="evaluator-title">
+      <div className="evaluator-heading"><div><p className="eyebrow">Practice out loud</p><h2 id="evaluator-title">Evaluate your answer</h2></div><span className="evaluator-hint">Free-tier AI evaluation</span></div>
+      <p className="evaluator-copy">Write your own response, then get feedback on accuracy, relevance, clarity, completeness, and communication.</p>
+      <form onSubmit={submitAnswer}>
+        <textarea value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="Write how you would answer this question..." maxLength={8000} rows={5} />
+        <div className="evaluator-actions"><span>{answer.length.toLocaleString()} / 8,000</span><button className="button primary-button" type="submit" disabled={loading}>{loading ? "Evaluating..." : "Submit answer"} <span>→</span></button></div>
+      </form>
+      {error && <p className="form-error" role="alert">{error}</p>}
+      {evaluation && <EvaluationResult evaluation={evaluation} />}
+      {!!attempts.length && <div className="attempt-history"><strong>Previous attempts</strong>{attempts.slice().reverse().map((attempt) => <span key={attempt._id || attempt.createdAt}>{attempt.score}/10 · {new Date(attempt.createdAt).toLocaleDateString()}</span>)}</div>}
+    </section>
+  );
+};
+
+const EvaluationResult = ({ evaluation }) => (
+  <div className="evaluation-result">
+    <div className="evaluation-score"><strong>{evaluation.score}</strong><span>/10 score</span></div>
+    <div className="dimension-grid">{Object.entries(evaluation.dimensions || {}).map(([name, value]) => <div key={name}><span>{name.replace(/([A-Z])/g, " $1")}</span><b>{value}/10</b><i><em style={{ width: `${value * 10}%` }} /></i></div>)}</div>
+    <div className="evaluation-columns">
+      <div><h3>Strengths</h3><ul>{evaluation.strengths.map((item) => <li key={item}>{item}</li>)}</ul></div>
+      <div><h3>Improve next</h3><ul>{[...evaluation.weaknesses, ...evaluation.suggestions].map((item) => <li key={item}>{item}</li>)}</ul></div>
+    </div>
+    <div className="improved-answer"><h3>Improved sample answer</h3><p>{evaluation.improvedAnswer}</p></div>
+  </div>
+);
+
+const Interview = () => {
+  const { interviewId } = useParams();
+  const navigate = useNavigate();
+  const { report, loading, error, getReportById } = useInterview();
+  const [activeSection, setActiveSection] = useState("overview");
+  const [activeQuestion, setActiveQuestion] = useState(0);
+  const [evaluations, setEvaluations] = useState([]);
+  const [managementError, setManagementError] = useState("");
+
+  useEffect(() => {
+    if (!report || report._id !== interviewId) getReportById(interviewId);
+  }, [getReportById, interviewId, report]);
+
+  if (loading || !report) {
+    return <main className="interview-page"><div className="state-card">{error || "Loading your personalized report..."}</div></main>;
+  }
+
+  const score = Math.round(report.matchScore || 0);
+  const savedEvaluations = evaluations.length ? evaluations : report.answerEvaluations || [];
+
+  const handleDownload = async () => {
+    try {
+      const blob = await downloadInterviewReport(interviewId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${report.title || "interview-report"}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (requestError) {
+      setManagementError(requestError.response?.data?.message || "Unable to download this report.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Delete this saved interview report? This cannot be undone.")) return;
+    try {
+      await deleteInterviewReport(interviewId);
+      navigate("/home");
+    } catch (requestError) {
+      setManagementError(requestError.response?.data?.message || "Unable to delete this report.");
+    }
+  };
+  const questions = activeSection === "technical" ? report.technicalQuestions || []
+    : activeSection === "behavioral" ? report.behavioralQuestions || [] : report.projectQuestions || [];
+
+  const renderOverview = () => (
+    <div className="overview-view">
+      <div className="question-header"><div><p className="eyebrow">Resume analysis</p><h1>What your report says</h1></div><span className="question-count">Evidence-based insights</span></div>
+      <div className="analysis-grid">
+        <EvidenceList title="Matched skills" items={report.matchedSkills} tone="positive" />
+        <EvidenceList title="Partially matched" items={report.partialSkills} tone="partial" />
+        <EvidenceList title="Missing or weak evidence" items={(report.skillGaps || []).map((item) => ({ ...item, evidence: `${item.severity} priority gap` }))} tone="gap" />
+      </div>
+      <div className="insight-grid">
+        <div className="insight-card"><h3>Resume strengths</h3><ul>{(report.resumeStrengths || []).map((item) => <li key={item}>{item}</li>)}</ul></div>
+        <div className="insight-card"><h3>Improvement suggestions</h3><ul>{(report.improvementSuggestions || []).map((item) => <li key={item}>{item}</li>)}</ul></div>
+      </div>
+      <div className="match-explanation"><p className="section-label">How to read your score</p><p>{report.matchExplanation || "The score reflects the evidence available in your resume compared with the supplied job description."}</p></div>
+      <div className="evaluation-history-panel">
+        <div className="panel-title"><p className="eyebrow">Practice history</p><h2>Previous answer evaluations</h2></div>
+        {savedEvaluations.length ? <div className="evaluation-history-list">{savedEvaluations.slice().reverse().map((item) => <article key={item._id || `${item.question}-${item.createdAt}`}><div><strong>{item.question}</strong><span>{new Date(item.createdAt).toLocaleDateString()}</span></div><b>{item.score}/10</b><p>{item.suggestions?.[0] || item.weaknesses?.[0] || "Review the detailed feedback in the practice section."}</p></article>)}</div> : <p className="muted">Your evaluated answers will appear here after your first practice attempt.</p>}
+      </div>
     </div>
   );
 
   const renderRoadmap = () => (
     <div className="question-view roadmap-view">
-      <div className="question-header">
-        <div>
-          <p className="eyebrow">Your preparation plan</p>
-          <h1>Road Map</h1>
-        </div>
-        <span className="question-count">{data.preparationPlan.length} days</span>
-      </div>
-      <div className="roadmap-list">
-        {data.preparationPlan.map((day) => (
-          <article className="roadmap-day" key={day.day}>
-            <span className="day-number">{String(day.day).padStart(2, "0")}</span>
-            <div>
-              <h2>{day.focusArea}</h2>
-              <ul>
-                {day.tasks.map((task) => <li key={task}>{task}</li>)}
-              </ul>
-            </div>
-          </article>
-        ))}
-      </div>
+      <div className="question-header"><div><p className="eyebrow">Next steps</p><h1>Preparation roadmap</h1></div><span className="question-count">{report.preparationPlan?.length || 0} days</span></div>
+      <div className="roadmap-list">{(report.preparationPlan || []).map((day) => <article className="roadmap-day" key={day.day}><span className="day-number">{String(day.day).padStart(2, "0")}</span><div><h2>{day.focusArea}</h2><ul>{day.tasks.map((task) => <li key={task}>{task}</li>)}</ul></div></article>)}</div>
     </div>
   );
 
   return (
     <main className="interview-page">
       <header className="interview-header">
-        <a className="brand" href="/home" aria-label="Interview AI home">
-          <span className="brand-mark">i</span>
-          <span>interview<span className="brand-accent">.ai</span></span>
-        </a>
-        <nav className="home-nav" aria-label="Main navigation">
-          <a href="/home">Dashboard</a>
-          <a className="active" href="/home">My interviews</a>
-          <button className="profile-button" type="button" aria-label="Open profile">SK</button>
-        </nav>
+        <Link className="brand" to="/home" aria-label="Interview AI home"><span className="brand-mark">i</span><span>interview<span className="brand-accent">.ai</span></span></Link>
+        <nav className="home-nav" aria-label="Main navigation"><Link to="/home">Dashboard</Link><Link className="active" to={`/interview/${interviewId}`}>Report</Link></nav>
       </header>
-
+      <section className="report-intro">
+        <div><p className="eyebrow">Interview report</p><h1>{report.title}</h1><p>Generated {new Date(report.createdAt).toLocaleDateString()}</p></div>
+        <div className="score-hero"><strong>{score}%</strong><span>job match</span></div>
+      </section>
+      <div className="report-actions"><button type="button" onClick={handleDownload}>Download PDF</button><button type="button" onClick={handleDelete}>Delete report</button></div>
+      {managementError && <p className="form-error report-management-error" role="alert">{managementError}</p>}
       <section className="interview-shell">
         <aside className="interview-sidebar" aria-label="Interview sections">
-          <div className="sidebar-heading">
-            <span className="sidebar-kicker">Interview review</span>
-            <strong>Full-stack developer</strong>
-          </div>
-          <nav className="section-nav">
-            {sections.map((section) => (
-              <button
-                className={activeSection === section.id ? "active" : ""}
-                key={section.id}
-                onClick={() => {
-                  setActiveSection(section.id);
-                  setActiveQuestion(0);
-                }}
-                type="button"
-              >
-                {section.label}
-              </button>
-            ))}
-          </nav>
-          <div className="sidebar-score">
-            <span>Match score</span>
-            <strong>{data.matchScore}%</strong>
-            <div className="score-track"><span style={{ width: `${data.matchScore}%` }} /></div>
-          </div>
+          <div className="sidebar-heading"><span className="sidebar-kicker">Review plan</span><strong>{score >= 70 ? "Strong starting point" : "Targeted growth plan"}</strong></div>
+          <nav className="section-nav">{sections.map((section) => <button className={activeSection === section.id ? "active" : ""} key={section.id} onClick={() => { setActiveSection(section.id); setActiveQuestion(0); }} type="button">{section.label}</button>)}</nav>
+          <div className="sidebar-score"><span>Job match</span><strong>{score}%</strong><div className="score-track"><span style={{ width: `${score}%` }} /></div></div>
         </aside>
-
         <section className="interview-main">
-          {activeSection === "roadmap" ? renderRoadmap() : renderQuestions()}
+          {activeSection === "overview" ? renderOverview() : activeSection === "roadmap" ? renderRoadmap() : <><QuestionList title={activeSection === "technical" ? "Technical questions" : activeSection === "behavioral" ? "HR & behavioral questions" : "Project-based questions"} questions={questions} activeQuestion={activeQuestion} setActiveQuestion={setActiveQuestion} />{questions.length > 0 && <AnswerEvaluator interviewId={interviewId} question={questions[activeQuestion]} evaluations={savedEvaluations} onEvaluated={(item) => setEvaluations((current) => [...current, item])} />}</>}
         </section>
-
-        <aside className="skills-panel">
-          <div className="panel-title">
-            <p className="eyebrow">Focus areas</p>
-            <h2>Skill gaps</h2>
-          </div>
-          <div className="skill-list">
-            {data.skillGaps.map((gap) => (
-              <span className={`skill-tag ${gap.severity}`} key={gap.skill}>
-                {gap.skill}
-              </span>
-            ))}
-          </div>
-          <div className="panel-tip">
-            <span aria-hidden="true">✦</span>
-            <p>Review these areas before your next practice round.</p>
-          </div>
-        </aside>
+        <aside className="skills-panel"><div className="panel-title"><p className="eyebrow">Focus areas</p><h2>Skills to strengthen</h2></div><div className="skill-list">{(report.skillGaps || []).map((gap) => <span className={`skill-tag ${gap.severity}`} key={gap.skill}>{gap.skill}</span>)}</div><div className="panel-tip"><span>✦</span><p>Use these gaps to prioritize your next study session.</p></div></aside>
       </section>
     </main>
   );
