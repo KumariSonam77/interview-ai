@@ -4,12 +4,32 @@ const cors = require("cors")
 const multer = require("multer")
 const app = express()
 
+const fallbackOrigins = [
+    "http://localhost:5173",
+    "https://interview-ai-frontend-nine-rust.vercel.app"
+]
+const configuredOrigins = (process.env.FRONTEND_URL || "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/+$/, ""))
+    .filter(Boolean)
+const allowedOrigins = [...new Set([...fallbackOrigins, ...configuredOrigins])]
+
+const corsOptions = {
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin.replace(/\/+$/, ""))) {
+            return callback(null, true)
+        }
+        return callback(new Error("Origin is not allowed by CORS"))
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}
+
+app.set("trust proxy", 1)
 app.use(express.json())
 app.use(cookieparser())
-app.use(cors({
-    origin: "http://localhost:5173",
-    credentials: true
-}))
+app.use(cors(corsOptions))
 /* require all the routes here */
 const authRouter = require("./routes/auth.routes")
 const interviewRouter = require("./routes/interview.routes")

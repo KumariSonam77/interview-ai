@@ -3,6 +3,15 @@ const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const tokenBlacklistModel = require("../models/blacklist.model")
 
+function authCookieOptions() {
+    const isProduction = process.env.NODE_ENV === "production"
+    return {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax"
+    }
+}
+
 function validateJwtConfiguration() {
     if (!process.env.JWT_SECRET) {
         const error = new Error("JWT_SECRET is missing in .env");
@@ -50,7 +59,7 @@ async function registerUserController(req, res) {
         process.env.JWT_SECRET,
         {expiresIn:"1d"}
     )
-    res.cookie("token",token)
+    res.cookie("token", token, authCookieOptions())
     res.status(201).json({
         message:"User registered successfully",
         user:{
@@ -91,7 +100,7 @@ async function loginUserController(req,res){
         process.env.JWT_SECRET,
         {expiresIn:"1d"}
     )
-    res.cookie("token",token)
+    res.cookie("token", token, authCookieOptions())
     
     res.status(200).json({
         message:"User loggedIn successfully",
@@ -117,7 +126,7 @@ async function logoutUserController(req, res){
         await tokenBlacklistModel.create({token})
     }
 
-    res.clearCookie("token")
+    res.clearCookie("token", authCookieOptions())
 
     res.status(200).json({
         message:"User logged out successfully"
